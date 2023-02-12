@@ -1,7 +1,4 @@
-import {APP_CONFIGS} from "~/config";
-import {
-  BaseSpanCounter, CounterStage,
-} from "~/appCommon/counter/counters_span";
+import {BaseSpanCounter, CounterStage,} from "~/appCommon/counter/counters_span";
 import {IBasePeriodCounter} from "~/appCommon/counter/counters_period_typedef";
 
 
@@ -43,24 +40,17 @@ abstract class BasePeriodCounter extends BaseSpanCounter implements IBasePeriodC
    *    重置並啓動 spanCounter, 並開始新的 periodCounter
    * */
   start(): CounterStage {
-    if (!this.canStartNewCount.value && this.counterEnabled.value){
-      console.log("continue period counter, since not completed yet");
-      return CounterStage.counting;
-    }else{
-      const stage = this.spanCounter.start();
-      switch (stage){
-        case CounterStage.counting:
-          return stage;
-        case CounterStage.startNewCount:
-          return super.start();
-        case CounterStage.exceedMaxRetries:
-          this.spanCounter.reset();
-          this.spanCounter.start();
-          return super.start();
-        default:
-          throw new Error("Uncaught stage " + stage);
-      }
+    const periodStage = super.start();
+    const spanStage = this.spanCounter.start();
+    const startPeriodAndRestartSpan = periodStage == CounterStage.startNewCount && spanStage == CounterStage.exceedMaxRetries;
+    const continuePeriodAndBlockSpan = periodStage == CounterStage.counting && spanStage == CounterStage.exceedMaxRetries;
+    if (startPeriodAndRestartSpan){
+      this.spanCounter.reset();
+      this.spanCounter.start();
+    } else if (continuePeriodAndBlockSpan){
+
     }
+    return periodStage;
   }
 
   async reset() {

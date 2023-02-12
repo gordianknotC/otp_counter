@@ -71,7 +71,7 @@ export abstract class BaseSpanCounter extends BaseReactiveCounter implements IBa
    *  這時無法啓用新 counter, 也尚未超出 maxRetries
    * */
   start(): CounterStage {
-    if (!this.canStartNewCount.value && this.counterEnabled.value){
+    if (/*!this.canStartNewCount.value && */this.counterEnabled.value){
       console.log("continue span counter, since not completed yet");
       return CounterStage.counting;
     }else{
@@ -81,7 +81,7 @@ export abstract class BaseSpanCounter extends BaseReactiveCounter implements IBa
         this.onExceedMaxRetries();
         return CounterStage.exceedMaxRetries;
       } else {
-        console.log('start span counter');
+        console.log('start counter', this.constructor.name);
         if (this.onStartNewSpan()){
           super.start(this.state.span);
         }
@@ -89,6 +89,8 @@ export abstract class BaseSpanCounter extends BaseReactiveCounter implements IBa
       }
     }
   }
+
+
 
   continue() {
     if (this.counterEnabled.value) {
@@ -149,7 +151,7 @@ export abstract class BaseSpanCounter extends BaseReactiveCounter implements IBa
     });
   };
 
-  /** watch property and store into localstoreage
+  /** 超出 max retries 時呼叫, 重設 this.state.retries
    *  @remark 使用者可覆寫擴展其功能，但需要 call super 才能保
    *  留 {@link watchAndStore} 功能
    * */

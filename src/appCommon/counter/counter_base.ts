@@ -8,7 +8,6 @@
 
 import {IBaseReactiveCounter, ISafeInterval, TCounterState} from "~/appCommon/counter/counter_base_typedef";
 import {computed, ComputedRef, reactive} from "vue";
-import {NotImplementedError} from "~/appCommon/base/baseExceptions";
 import {Optional} from "~/appCommon/base/baseApiTypes";
 import {is} from "~/appCommon/extendBase/impls/utils/typeInferernce";
 
@@ -53,7 +52,7 @@ export class SafeInterval implements ISafeInterval {
     }
   }
 }
-
+/** {@inheritDoc IBaseReactiveCounter} */
 export abstract class BaseReactiveCounter implements IBaseReactiveCounter {
   state: TCounterState;
   interval: number;
@@ -136,57 +135,3 @@ export abstract class BaseReactiveCounter implements IBaseReactiveCounter {
 
 
 
-
-// /**
-//  *    Refresh Auth Token Guardian
-//  *    一分鐘內只能請求一次 refresh token
-//  *    超過一次視為 failed
-//  * */
-// export class RefreshTokenSpanCounter extends BaseReactiveCounter{
-//   private _canRefreshAuth: boolean;
-//   constructor() {
-//     super();
-//     this._canRefreshAuth = true;
-//     this.counterEnabled = computed(()=>true);
-//   }
-//
-//   get canRefreshAuth(): boolean {
-//     return this._canRefreshAuth;
-//   }
-//
-//   start(periodInSeconds?: number) {
-//     if (this.counter.activated) {
-//     } else {
-//       super.start(periodInSeconds ?? 60);
-//     }
-//     this._canRefreshAuth = false;
-//   }
-//
-//   afterSet(lbound: number) {
-//   }
-//
-//   afterCancel() {
-//     this._canRefreshAuth = true;
-//   }
-// }
-//
-//
-// export class RefreshTokenSpanGuard {
-//   protected counter: RefreshTokenSpanCounter;
-//   constructor() {
-//     this.counter = new RefreshTokenSpanCounter();
-//   }
-//
-//   async authRefresh(): Promise<boolean>{
-//     if (this.counter.canRefreshAuth){
-//       this.counter.start();
-//       throw new NotImplementedError();
-//       // if (is.initialized(result)){
-//       //   return true;
-//       // }else{
-//       //   return false;
-//       // }
-//     }
-//     return false;
-//   }
-// }

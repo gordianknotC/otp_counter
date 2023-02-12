@@ -1,25 +1,23 @@
 <template lang="pug">
 section.p-4
   section.my-2
-    h2.font-bold.text-xl.my-2 PeriodCounter+SpanCounter
+    h2.font-bold.text-xl.my-2 VerifyOTPPeriodCounter
     p.text-sm 於 period({{COUNTER.PERIOD}}) 可進行 {{COUNTER.PERIOD_RETRIES}} 次倒數
     p.text-sm 於 span({{COUNTER.SPAN}}) 可進行 {{COUNTER.SPAN_RETRIES}} 次倒數
-  hr.my-2
   h2.font-bold.text-xl.my-2 period counter
-  pre counter        : {{counterText}}
-  pre retires        : {{counter.state.retries}}
-  pre max retries    : {{counter.state.maxTimes}}
-  pre exceed retries : {{counter.hasExceedMaxRetries.value}}
-  pre enabled        : {{enabled}}
-  pre canResend      : {{canResend}}
-  hr.my-2
+  pre counter        : {{periodCounterText}}
+  pre retires        : {{periodCounter.state.retries}}
+  pre max retries    : {{periodCounter.state.maxTimes}}
+  pre exceed retries : {{periodCounter.hasExceedMaxRetries.value}}
+  pre enabled        : {{periodCounter.counterEnabled}}
   h2.font-bold.text-xl.my-2 span counter
-  pre counter     : {{spanCounterText}}
-  pre retires     : {{counter.spanCounter.state.retries}}
-  pre max retries : {{counter.spanCounter.state.maxTimes}}
-
+  pre counter     : {{peiord_spanCounterText}}
+  pre retires     : {{periodCounter.spanCounter.state.retries}}
+  pre max retries : {{periodCounter.spanCounter.state.maxTimes}}
+  pre exceed retries : {{periodCounter.spanCounter.hasExceedMaxRetries.value}}
+  pre enabled        : {{periodCounter.spanCounter.counterEnabled}}
   section.py-4
-    van-button(@click="restart" :disabled="!canResend")
+    van-button(@click="restart")
       span.text restart
     van-button(@click="reset")
       span.text reset
@@ -29,11 +27,31 @@ section.p-4
       span.text continuum
 
 
+  section.my-2
+    h2.font-bold.text-xl.my-2 VerifyOTPSpanCounter
+    p.text-sm 於 span({{COUNTER.SPAN}}) 可進行 {{COUNTER.SPAN_RETRIES}} 次倒數
+  h2.font-bold.text-xl.my-2 span counter
+  pre counter     : {{spanCounterText}}
+  pre retires     : {{spanCounter.state.retries}}
+  pre max retries : {{spanCounter.state.maxTimes}}
+  pre exceed retries: {{spanCounter.hasExceedMaxRetries.value}}
+  pre enabled       : {{spanCounter.counterEnabled}}
+  section.py-4
+    van-button(@click="span_restart")
+      span.text restart
+    van-button(@click="span_reset")
+      span.text reset
+    van-button(@click="span_start")
+      span.text start
+    van-button(@click="span_continuum")
+      span.text continuum
+
+
 </template>
 
 <script lang="ts">
 import { ComputedRef, defineComponent, ref, watch } from "vue";
-import {VerifyOTPPeriodCounter} from "~/store/counter/counter";
+import {VerifOTPSpanCounter, VerifyOTPPeriodCounter} from "~/store/counter/counter";
 import {computed, onMounted} from "~/appCommon/base/vueTypes";
 import {APP_CONFIGS} from "~/config";
 
@@ -48,66 +66,89 @@ export default defineComponent({
     APP_CONFIGS.DEFAULT_MODELS.COUNTER.PERIOD = 30;
     APP_CONFIGS.DEFAULT_MODELS.COUNTER.PERIOD_RETRIES = 3;
 
-    const counter = new VerifyOTPPeriodCounter();
+    const periodCounter = new VerifyOTPPeriodCounter();
+    const spanCounter = new VerifOTPSpanCounter("yoyo");
 
-    const counterText = computed(()=>{
-      const text =  counter.currentCounter.value;
-      const enabled =  counter.counterEnabled.value;
+    const periodCounterText = computed(()=>{
+      const text =  periodCounter.currentCounter.value;
+      const enabled =  periodCounter.counterEnabled.value;
+      if (enabled)
+        return `(${text})`;
+      return "";
+    });
+
+    const peiord_spanCounterText = computed(()=>{
+      const text =  periodCounter.spanCounter.currentCounter.value;
+      const enabled =  periodCounter.spanCounter.counterEnabled.value;
       if (enabled)
         return `(${text})`;
       return "";
     });
 
     const spanCounterText = computed(()=>{
-      const text =  counter.spanCounter.currentCounter.value;
-      const enabled =  counter.spanCounter.counterEnabled.value;
+      const text =  spanCounter.currentCounter.value;
+      const enabled =  spanCounter.counterEnabled.value;
       if (enabled)
         return `(${text})`;
       return "";
     });
 
-    const canResend = computed(()=>{
-      return !counter.counterEnabled.value;
-    });
-
-    const enabled = counter.counterEnabled;
-
-    //@ts-ignore
-    window.counter = counter;
-    onMounted(()=>{
+    const init = ()=>{
       console.group("MOUNT");
-      if (counter.counterEnabled.value){
+      if (periodCounter.counterEnabled.value){
         console.log("continue");
-        counter.continue();
-      }else if (counter.hasExceedMaxRetries.value){
+        periodCounter.continue();
+      }else if (periodCounter.hasExceedMaxRetries.value){
         console.log("restart...");
-        counter.reset();
-        counter.start();
+        periodCounter.reset();
+        periodCounter.start();
       }else{
         console.log("start");
-        counter.start();
+        periodCounter.start();
       }
       console.groupEnd();
-    })    ;
+    }
+
+    //@ts-ignore
+    window.counter = periodCounter;
+    onMounted(()=>{
+      init();
+    });
+
     return {
       COUNTER: APP_CONFIGS.DEFAULT_MODELS.COUNTER,
-      counter,
-      counterText,
+      periodCounter,
+      spanCounter,
+      periodCounterText,
       spanCounterText,
-      enabled,
-      canResend,
+      peiord_spanCounterText,
       restart(){
-        counter.reset();
-        counter.start();
+        periodCounter.reset();
+        periodCounter.start();
       },
       reset(){
-        counter.reset();
+        periodCounter.reset();
       },
       start(){
-        counter.start();
+        periodCounter.start();
       },
       continuum(){
-        counter.continue();
+        periodCounter.continue();
+      },
+      //
+      //
+      span_restart(){
+        spanCounter.reset();
+        spanCounter.start();
+      },
+      span_reset(){
+        spanCounter.reset();
+      },
+      span_start(){
+        spanCounter.start();
+      },
+      span_continuum(){
+        spanCounter.continue();
       }
     };
   }
