@@ -4,9 +4,12 @@
 
 [demo](https://gordianknotc.github.io/otp_counter/)
 
-由二種 counter 組成，NestedCounter 內可巢狀一個 SpanCounter|NestedCounter, 
-二種 Counter 都繼承 BaseSpanCounter，設計用於雙重 counter 條件，如
+由二種 counter 組成
+- BaseNestedCounter 
+- BaseSpanCounter
 
+BaseNestedCounter 繼承 BaseNestedCounter，內可巢狀一個 BaseSpanCounter | BaseNestedCounter, BaseSpanCounter 則實作基本羅輯， 
+設計用於雙重 counter 條件，如：
 
 > __定義:__
 >
