@@ -73,7 +73,7 @@ abstract class BaseNestedCounter extends BaseSpanCounter implements IBaseNestedC
     const innerMostStage = stages[stages.length -1];
     if (innerMostStage == CounterStage.startNewCount){
       if (!this.hasExceedMaxRetries.value){
-        this.retry();
+        this.startCount();
       }else{
         this.didExceedMaxRetries();
       }

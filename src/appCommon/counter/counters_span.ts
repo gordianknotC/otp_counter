@@ -73,7 +73,7 @@ export abstract class BaseSpanCounter extends BaseReactiveCounter implements IBa
     this.watchPropertyChange();
   }
 
-  protected retry() : CounterStage[]{
+  protected startCount() : CounterStage[]{
     this.state.retries++;
     if (this.hasExceedMaxRetries.value) {
       console.log('ban span counter, since hasExceedMaxRetries');
@@ -104,7 +104,7 @@ export abstract class BaseSpanCounter extends BaseReactiveCounter implements IBa
       this._onStart(CounterStage.counting);
       return [CounterStage.counting];
     }else{
-      return this.retry();
+      return this.startCount();
     }
   }
 
