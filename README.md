@@ -8,26 +8,36 @@
 - BaseNestedCounter 
 - BaseSpanCounter
 
-BaseNestedCounter 繼承 BaseNestedCounter，內可巢狀一個 BaseSpanCounter | BaseNestedCounter, BaseSpanCounter 則實作基本羅輯， 
-設計用於雙重 counter 條件，基本定義如下：
+BaseNestedCounter 繼承 BaseNestedCounter，內可巢狀一個 BaseSpanCounter | BaseNestedCounter, 當 BaseSpanCounter 巢狀於 BaseNestedCounter 下時，BaseSpanCounter 得以被 BaseNestedCounter 重設，BaseNestedCounter 繼承了 BaseSpanCounter 的基本邏輯， 雙重 counter 設計用於多重 counter 條件，基本定義如下：
 
 > __定義:__
 >
-> 於 period 其間可進行 pt 次倒數, 於 span 其間可進行 st 次倒數, 
-> 當 span 巢狀於 period 下時，span 重試次數得以被 period 重設, 
+> 於 period 其間可進行 pt 次倒數, 
+> 於 span 其間可進行 st 次倒數, 
+> 當 span 巢狀於 period 下時，
+> span 重試次數得以被 period 重設, 
 > 因此當 period 再次計數後 span 重設。
 
 
-__實例:__
-- email counter, 5分鐘可重試5次，每次間隔 10 秒內
-  - NestedCounter 間隔 period 5min， maxRetries 1
-    - SpanCounter 間隔 span 10s， maxRetries 5
+__實例 email counter:__
+5分鐘可重試5次，每次間隔 10 秒內，若以 BaseNestedCounter/BaseSpanCounter 組合，其設定如下：
+- BaseNestedCounter -  period 5min， maxRetries 1
+  - BaseSpanCounter - span 10s， maxRetries 5
 
 
-- otp counter, 於 3分鐘可重試3次，每次間隔 10 秒內，一天最多9次
-  - BaseSumCounter 間隔 1d，maxRetries 9
-    - NestedCounter 間隔 3min，maxRetries INFINITY
-      - SpanCounter 間隔 span 10s， maxRetries 3
+__實例 otp counter:__
+於 3分鐘可重試3次，每次間隔 10 秒內，一天最多9次, 若以 BaseNestedCounter/BaseSpanCounter 組合，其設定如下：
+- BaseSumCounter 間隔 1d，maxRetries 9
+  - BaseNestedCounter 間隔 3min，maxRetries INFINITY
+    - BaseSpanCounter 間隔 span 10s， maxRetries 3
+
+
+## Feature
+- counter 當前狀態會即時寫入 browser local storage, 重刷不影嚮 counter 狀態，除非清除 local storage
+- BaseSpanCounter
+  可設定 counter 於 span 秒內重試 St 次
+- BaseNestedCounter
+  可設定 counter 於 period 秒內重試 St 次, 並可巢狀一個 BaseSpanCounter|BaseNestedCounter, 當母層計數完後，子層計數重設
 
 ## Examples:
 ### EmailCounter
