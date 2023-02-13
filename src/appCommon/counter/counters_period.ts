@@ -1,5 +1,5 @@
 import {BaseSpanCounter, CounterStage,} from "~/appCommon/counter/counters_span";
-import {IBasePeriodCounter} from "~/appCommon/counter/counters_period_typedef";
+import {IBaseNestedCounter} from "~/appCommon/counter/counters_period_typedef";
 
 
 type TPeriodCounterOption = {
@@ -12,21 +12,23 @@ type TPeriodCounterOption = {
  *
  * */
 export
-abstract class BasePeriodCounter extends BaseSpanCounter implements IBasePeriodCounter{
-  spanCounter: BaseSpanCounter;
-
+abstract class BaseNestedCounter extends BaseSpanCounter implements IBaseNestedCounter{
+  nestedCounter: BaseNestedCounter|BaseSpanCounter;
+  countNested: boolean = false;
   protected constructor(option: {
     maxTimes: number,
     period: number,
-    spanCounter: BaseSpanCounter,
-    storeKey: string
+    nestedCounter: BaseNestedCounter|BaseSpanCounter,
+    storeKey: string,
+    countNested?: boolean,
   }) {
     super({
       maxTimes: option.maxTimes,
       span: option.period,
-      storeKey: 'PeriodCounter',
+      storeKey: option.storeKey,
     });
-    this.spanCounter = option.spanCounter;
+    this.nestedCounter = option.nestedCounter;
+    this.countNested = option.countNested ?? false;
   }
 
   /**
@@ -39,41 +41,60 @@ abstract class BasePeriodCounter extends BaseSpanCounter implements IBasePeriodC
    *  - CounterStage.exceedMaxRetries
    *    重置並啓動 spanCounter, 並開始新的 periodCounter
    * */
-  start(): CounterStage {
-    const periodStage = super.start();
-    const spanStage = this.spanCounter.start();
-    const startPeriodAndRestartSpan = periodStage == CounterStage.startNewCount && spanStage == CounterStage.exceedMaxRetries;
-    const continuePeriodAndBlockSpan = periodStage == CounterStage.counting && spanStage == CounterStage.exceedMaxRetries;
-    if (startPeriodAndRestartSpan){
-      this.spanCounter.reset();
-      this.spanCounter.start();
-    } else if (continuePeriodAndBlockSpan){
+  start(): CounterStage[] {
+    let periodStage = super.start();
+    if (periodStage[0] == CounterStage.exceedMaxRetries)
+      return periodStage;
 
+    let spanStage = this.nestedCounter.start();
+    const startPeriodAndRestartSpan = periodStage[0] == CounterStage.startNewCount && spanStage[0] == CounterStage.exceedMaxRetries;
+    const continuePeriodAndBlockSpan = periodStage[0] == CounterStage.counting && spanStage[0] == CounterStage.exceedMaxRetries;
+
+    if (startPeriodAndRestartSpan){
+      this.nestedCounter.reset();
+      spanStage = this.nestedCounter.start();
+    } else if (continuePeriodAndBlockSpan){
     }
-    return periodStage;
+
+    const ret = [...periodStage, ...spanStage];
+    const innerMostStage = spanStage[spanStage.length -1];
+
+    if (this.countNested){
+      if (innerMostStage == CounterStage.startNewCount){
+        if (!this.hasExceedMaxRetries.value){
+          this.retry();
+        }else{
+          this.didExceedMaxRetries();
+        }
+      }
+    }
+    return ret;
+  }
+
+  protected didExceedMaxRetries() {
+    super.didExceedMaxRetries();
+    (this.nestedCounter as any).didExceedMaxRetries();
   }
 
   async reset() {
-    this.spanCounter.reset();
+    this.nestedCounter.reset();
     super.reset();
   }
 
   continue() {
-    this.spanCounter.continue();
+    this.nestedCounter.continue();
     super.continue();
   }
 
   cancel() {
-    this.spanCounter.cancel();
+    this.nestedCounter.cancel();
     super.cancel();
   }
 
-  protected onStartNewSpan(): boolean {
+  protected canStartNewSpan(): boolean {
     return true;
   }
 
-  protected onExceedMaxRetries() {
-    super.onExceedMaxRetries();
-  }
+
 }
 

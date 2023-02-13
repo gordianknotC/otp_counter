@@ -1,21 +1,21 @@
 <template lang="pug">
 section.p-4
   section.my-2
-    h2.font-bold.text-xl.my-2 VerifyOTPPeriodCounter
-    p.text-sm 於 period({{COUNTER.PERIOD}}) 可進行 {{COUNTER.PERIOD_RETRIES}} 次倒數
-    p.text-sm 於 span({{COUNTER.SPAN}}) 可進行 {{COUNTER.SPAN_RETRIES}} 次倒數
+    h2.font-bold.text-xl.my-2 EmailCounter
+    p.text-sm 於 period ({{emailCounter.state.span}}s) 其間可進行 {{emailCounter.state.maxTimes}} 次倒數
+    p.text-sm 於 span ({{emailCounter.nestedCounter.state.span}}s) 其間可進行 {{emailCounter.nestedCounter.state.maxTimes}} 次倒數, 當 period 再次計數後 span 重設
   h2.font-bold.text-xl.my-2 period counter
-  pre counter        : {{periodCounterText}}
-  pre retires        : {{periodCounter.state.retries}}
-  pre max retries    : {{periodCounter.state.maxTimes}}
-  pre exceed retries : {{periodCounter.hasExceedMaxRetries.value}}
-  pre enabled        : {{periodCounter.counterEnabled}}
+  pre counter        : {{emailCounterText}}
+  pre retires        : {{emailCounter.state.retries}}
+  pre max retries    : {{emailCounter.state.maxTimes}}
+  pre exceed retries : {{emailCounter.hasExceedMaxRetries.value}}
+  pre enabled        : {{emailCounter.counterEnabled}}
   h2.font-bold.text-xl.my-2 span counter
-  pre counter     : {{peiord_spanCounterText}}
-  pre retires     : {{periodCounter.spanCounter.state.retries}}
-  pre max retries : {{periodCounter.spanCounter.state.maxTimes}}
-  pre exceed retries : {{periodCounter.spanCounter.hasExceedMaxRetries.value}}
-  pre enabled        : {{periodCounter.spanCounter.counterEnabled}}
+  pre counter     : {{emailSubCounterText}}
+  pre retires     : {{emailCounter.nestedCounter.state.retries}}
+  pre max retries : {{emailCounter.nestedCounter.state.maxTimes}}
+  pre exceed retries : {{emailCounter.nestedCounter.hasExceedMaxRetries.value}}
+  pre enabled        : {{emailCounter.nestedCounter.counterEnabled}}
   section.py-4
     van-button(@click="restart")
       span.text restart
@@ -28,32 +28,49 @@ section.p-4
 
 
   section.my-2
-    h2.font-bold.text-xl.my-2 VerifyOTPSpanCounter
-    p.text-sm 於 span({{COUNTER.SPAN}}) 可進行 {{COUNTER.SPAN_RETRIES}} 次倒數
-  h2.font-bold.text-xl.my-2 span counter
-  pre counter     : {{spanCounterText}}
-  pre retires     : {{spanCounter.state.retries}}
-  pre max retries : {{spanCounter.state.maxTimes}}
-  pre exceed retries: {{spanCounter.hasExceedMaxRetries.value}}
-  pre enabled       : {{spanCounter.counterEnabled}}
+    h2.font-bold.text-xl.my-2 OTPCounter
+    p.text-sm 於 period ({{otpCounter.state.span}}s) 其間可進行 {{otpCounter.state.maxTimes}} 次倒數
+    p.text-sm 於 span ({{otpCounter.nestedCounter.state.span}}s) 其間可進行 {{otpCounter.nestedCounter.state.maxTimes}} 次倒數, 當 period 再次計數後 span 重設
+  h2.font-bold.text-lg.my-2 OTPCounter
+  pre counter        : {{otpCounterText}}
+  pre retires        : {{otpCounter.state.retries}}
+  pre max retries    : {{otpCounter.state.maxTimes}}
+  pre exceed retries : {{otpCounter.hasExceedMaxRetries.value}}
+  pre enabled        : {{otpCounter.counterEnabled}}
+  h2.font-bold.text-lg.my-2 OTPSubCounter
+  pre counter     : {{otpSubCounterText}}
+  pre retires     : {{otpCounter.nestedCounter.state.retries}}
+  pre max retries : {{otpCounter.nestedCounter.state.maxTimes}}
+  pre exceed retries : {{otpCounter.nestedCounter.hasExceedMaxRetries.value}}
+  pre enabled        : {{otpCounter.nestedCounter.counterEnabled}}
+  h2.font-bold.text-lg.my-2 OTPSubSubCounter
+  pre counter     : {{otpSubSubCounterText}}
+  pre retires     : {{otpCounter.nestedCounter.nestedCounter.state.retries}}
+  pre max retries : {{otpCounter.nestedCounter.nestedCounter.state.maxTimes}}
+  pre exceed retries : {{otpCounter.nestedCounter.nestedCounter.hasExceedMaxRetries.value}}
+  pre enabled        : {{otpCounter.nestedCounter.nestedCounter.counterEnabled}}
   section.py-4
-    van-button(@click="span_restart")
+    van-button(@click="otp_restart")
       span.text restart
-    van-button(@click="span_reset")
+    van-button(@click="otp_reset")
       span.text reset
-    van-button(@click="span_start")
+    van-button(@click="otp_start")
       span.text start
-    van-button(@click="span_continuum")
+    van-button(@click="otp_continuum")
       span.text continuum
 
+  br
+  br
+  br
 
 </template>
 
 <script lang="ts">
 import { ComputedRef, defineComponent, ref, watch } from "vue";
-import {VerifOTPSpanCounter, VerifyOTPPeriodCounter} from "~/store/counter/counter";
+import {VerifEmailSpanCounter, VerifyEmailCounter, VerifyOTPCounter, VerifyOTPPeriodCounter} from "~/store/counter/counter";
 import {computed, onMounted} from "~/appCommon/base/vueTypes";
 import {APP_CONFIGS} from "~/config";
+import {BaseNestedCounter} from "~/appCommon/counter/counters_period";
 
 
 export default defineComponent({
@@ -61,94 +78,107 @@ export default defineComponent({
   components: {
   },
   setup() {
-    APP_CONFIGS.DEFAULT_MODELS.COUNTER.SPAN = 10;
-    APP_CONFIGS.DEFAULT_MODELS.COUNTER.SPAN_RETRIES = 2;
-    APP_CONFIGS.DEFAULT_MODELS.COUNTER.PERIOD = 30;
-    APP_CONFIGS.DEFAULT_MODELS.COUNTER.PERIOD_RETRIES = 3;
+    const emailCounter = new VerifyEmailCounter();
+    const otpCounter = new VerifyOTPCounter();
 
-    const periodCounter = new VerifyOTPPeriodCounter();
-    const spanCounter = new VerifOTPSpanCounter("yoyo");
-
-    const periodCounterText = computed(()=>{
-      const text =  periodCounter.currentCounter.value;
-      const enabled =  periodCounter.counterEnabled.value;
+    const emailCounterText = computed(()=>{
+      const text =  emailCounter.currentCounter.value;
+      const enabled =  emailCounter.counterEnabled.value;
       if (enabled)
         return `(${text})`;
       return "";
     });
 
-    const peiord_spanCounterText = computed(()=>{
-      const text =  periodCounter.spanCounter.currentCounter.value;
-      const enabled =  periodCounter.spanCounter.counterEnabled.value;
+    const emailSubCounterText = computed(()=>{
+      const text =  emailCounter.nestedCounter.currentCounter.value;
+      const enabled =  emailCounter.nestedCounter.counterEnabled.value;
       if (enabled)
         return `(${text})`;
       return "";
     });
 
-    const spanCounterText = computed(()=>{
-      const text =  spanCounter.currentCounter.value;
-      const enabled =  spanCounter.counterEnabled.value;
+    const otpCounterText = computed(()=>{
+      const text =  otpCounter.currentCounter.value;
+      const enabled =  otpCounter.counterEnabled.value;
       if (enabled)
         return `(${text})`;
       return "";
     });
 
-    const init = ()=>{
+    const otpSubCounterText = computed(()=>{
+      const text =  otpCounter.nestedCounter.currentCounter.value;
+      const enabled =  otpCounter.nestedCounter.counterEnabled.value;
+      if (enabled)
+        return `(${text})`;
+      return "";
+    });
+    const otpSubSubCounterText = computed(()=>{
+      const text =  (otpCounter.nestedCounter as VerifyOTPPeriodCounter).nestedCounter.currentCounter.value;
+      const enabled =  (otpCounter.nestedCounter as VerifyOTPPeriodCounter).counterEnabled.value;
+      if (enabled)
+        return `(${text})`;
+      return "";
+    });
+
+
+    const init = (counter: BaseNestedCounter)=>{
       console.group("MOUNT");
-      if (periodCounter.counterEnabled.value){
+      if (counter.counterEnabled.value){
         console.log("continue");
-        periodCounter.continue();
-      }else if (periodCounter.hasExceedMaxRetries.value){
+        counter.continue();
+      }else if (counter.hasExceedMaxRetries.value){
         console.log("restart...");
-        periodCounter.reset();
-        periodCounter.start();
+        counter.reset();
+        counter.start();
       }else{
         console.log("start");
-        periodCounter.start();
+        counter.start();
       }
       console.groupEnd();
     }
 
     //@ts-ignore
-    window.counter = periodCounter;
+    window.counter = emailCounter;
     onMounted(()=>{
-      init();
+      init(emailCounter);
+      init(otpCounter);
     });
 
     return {
-      COUNTER: APP_CONFIGS.DEFAULT_MODELS.COUNTER,
-      periodCounter,
-      spanCounter,
-      periodCounterText,
-      spanCounterText,
-      peiord_spanCounterText,
+      emailCounter,
+      otpCounter,
+      emailCounterText,
+      emailSubCounterText,
+      otpCounterText,
+      otpSubCounterText,
+      otpSubSubCounterText,
       restart(){
-        periodCounter.reset();
-        periodCounter.start();
+        emailCounter.reset();
+        emailCounter.start();
       },
       reset(){
-        periodCounter.reset();
+        emailCounter.reset();
       },
       start(){
-        periodCounter.start();
+        emailCounter.start();
       },
       continuum(){
-        periodCounter.continue();
+        emailCounter.continue();
       },
       //
       //
-      span_restart(){
-        spanCounter.reset();
-        spanCounter.start();
+      otp_restart(){
+        otpCounter.reset();
+        otpCounter.start();
       },
-      span_reset(){
-        spanCounter.reset();
+      otp_reset(){
+        otpCounter.reset();
       },
-      span_start(){
-        spanCounter.start();
+      otp_start(){
+        otpCounter.start();
       },
-      span_continuum(){
-        spanCounter.continue();
+      otp_continuum(){
+        otpCounter.continue();
       }
     };
   }

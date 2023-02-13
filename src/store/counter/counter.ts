@@ -1,32 +1,27 @@
 import {BaseSpanCounter, CounterStage} from "~/appCommon/counter/counters_span";
-import {BasePeriodCounter} from "~/appCommon/counter/counters_period";
-import {APP_CONFIGS} from "~/config";
+import {BaseNestedCounter} from "~/appCommon/counter/counters_period";
 
 
-export class VerifOTPSpanCounter extends  BaseSpanCounter{
-  constructor(key: string = 'VerifOTPSpanCounter') {
+/** example email counter */
+
+export class VerifEmailSpanCounter extends  BaseSpanCounter{
+  constructor(key: string = 'EmailSpanCounter') {
     super({
-      maxTimes: APP_CONFIGS.DEFAULT_MODELS.COUNTER.SPAN_RETRIES,
-      span:     APP_CONFIGS.DEFAULT_MODELS.COUNTER.SPAN,
+      maxTimes: 2,
+      span:     10,
       storeKey: key
     });
   }
   protected afterCancel(): void {}
   protected afterSet(lbound: number): void {}
-
-  // start(): CounterStage {
-  //   if (this.counterEnabled.value)
-  //     return CounterStage.counting;
-  //   return super.start();
-  // }
 }
 
-export class VerifyOTPPeriodCounter extends BasePeriodCounter{
-  constructor(key: string = 'VerifyOTPPeriodCounter') {
+export class VerifyEmailCounter extends BaseNestedCounter{
+  constructor(key: string = 'EmailCounter') {
     super({
-      maxTimes:  APP_CONFIGS.DEFAULT_MODELS.COUNTER.PERIOD_RETRIES,
-      period: APP_CONFIGS.DEFAULT_MODELS.COUNTER.PERIOD,
-      spanCounter: new VerifOTPSpanCounter(),
+      maxTimes:  3,
+      period: 30,
+      nestedCounter: new VerifEmailSpanCounter(),
       storeKey: key,
     });
     console.log("Period:", this.state.span, "option:");
@@ -35,9 +30,51 @@ export class VerifyOTPPeriodCounter extends BasePeriodCounter{
 
   protected afterCancel(): void {}
   protected afterSet(lbound: number): void {}
-  // start(): CounterStage {
-  //   if (this.counterEnabled.value)
-  //     return CounterStage.counting;
-  //   return super.start();
-  // }
+}
+
+
+
+
+
+
+/** example otp counter */
+
+export class VerifOTPSpanCounter extends  BaseSpanCounter{
+  constructor(key: string = 'VerifOTPSpanCounter') {
+    super({
+      maxTimes: 0,
+      span:     1,
+      storeKey: key
+    });
+  }
+  protected afterCancel(): void {}
+  protected afterSet(lbound: number): void {}
+}
+
+export class VerifyOTPPeriodCounter extends BaseNestedCounter{
+  constructor(key: string = 'VerifyOTPPeriodCounter') {
+    super({
+      maxTimes:  0,
+      period: 12,
+      nestedCounter: new VerifOTPSpanCounter(),
+      storeKey: key,
+    });
+  }
+
+  protected afterCancel(): void {}
+  protected afterSet(lbound: number): void {}
+}
+
+export class VerifyOTPCounter extends BaseNestedCounter{
+  constructor(key: string = 'VerifyOTPCounter') {
+    super({
+      maxTimes:  9,
+      period: 60 * 60,
+      nestedCounter: new VerifyOTPPeriodCounter(),
+      storeKey: key,
+      countNested: true,
+    });
+  }
+  protected afterCancel(): void {}
+  protected afterSet(lbound: number): void {}
 }
