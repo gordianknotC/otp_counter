@@ -34,13 +34,24 @@ __實例 otp counter:__
 
 ## Feature
 - counter 當前狀態會即時寫入 browser local storage, 重刷不影嚮 counter 狀態，除非清除 local storage
-- BaseSpanCounter
+- BaseSpanCounter | [source][span]
+  
   可設定 counter 於 span 秒內重試 St 次
-- BaseNestedCounter
+- BaseNestedCounter | [source][nested]
+  
   可設定 counter 於 period 秒內重試 St 次, 並可巢狀一個 BaseSpanCounter|BaseNestedCounter, 當母層計數完後，子層計數重設
+
+- BaseSumCounter | [source][sum]
+  
+  繼承 BaseNestedCounter, 覆寫 countNested 為 true，用來計數巢狀 counter 
+
+
 
 ## Examples:
 ### EmailCounter
+
+
+[typescript-source][ex]
 ```ts
 export class VerifEmailSpanCounter extends  BaseSpanCounter{
   constructor(key: string = 'EmailSpanCounter') {
@@ -71,6 +82,8 @@ export class VerifyEmailCounter extends BaseNestedCounter{
 }
 ```
 
+
+[vue-source][demo]
 ```vue
 <template lang="pug">
 section.p-4
@@ -172,11 +185,10 @@ export default defineComponent({
 
 
 
-### OTPCounter
+### OTPCounter 
+
+[typescript-source][ex]
 ```ts
-
-
-
 /** example otp counter */
 export class VerifOTPSpanCounter extends  BaseSpanCounter{
   constructor(key: string = 'VerifOTPSpanCounter') {
@@ -221,7 +233,7 @@ export class VerifyOTPCounter extends BaseSumCounter{
 }
 ```
 
-
+[vue-source][demo]
 ```vue
 <template lang="pug">
 section.p-4
@@ -343,3 +355,9 @@ export default defineComponent({
 - [ ] 單元測試  
 
 
+
+[span]: src/appCommon/counter/counters_span.ts
+[nested]: src/appCommon/counter/counter_nested.ts
+[sum]: src/appCommon/counter/counter_sum.ts
+[ex]: src/store/counter/counter.ts
+[demo]: src/views/demos/CounterDemo.vue
