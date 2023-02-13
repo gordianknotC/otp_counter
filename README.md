@@ -9,26 +9,25 @@
 - BaseSpanCounter
 
 BaseNestedCounter 繼承 BaseNestedCounter，內可巢狀一個 BaseSpanCounter | BaseNestedCounter, BaseSpanCounter 則實作基本羅輯， 
-設計用於雙重 counter 條件，如：
+設計用於雙重 counter 條件，基本定義如下：
 
 > __定義:__
 >
-> 於 period 其間可進行 pt 次倒數, 於 span 其間可進行 st 次倒數, 當 period 再次計數後 span 重設, 
->
+> 於 period 其間可進行 pt 次倒數, 於 span 其間可進行 st 次倒數, 
+> 當 span 巢狀於 period 下時，span 重試次數得以被 period 重設, 
+> 因此當 period 再次計數後 span 重設。
 
 
 __實例:__
-- otp counterA, 於 3分鐘可重試3次，每次間隔 10 秒內，一天最多9次
-  - BaseSumCounter 間隔 1d，maxRetries 9
-    - NestedCounter 間隔 3min，maxRetries INFINITY
-      - SpanCounter 間隔 span 10s， maxRetries 3
-
-
 - email counter, 5分鐘可重試5次，每次間隔 10 秒內
   - NestedCounter 間隔 period 5min， maxRetries 1
     - SpanCounter 間隔 span 10s， maxRetries 5
 
 
+- otp counter, 於 3分鐘可重試3次，每次間隔 10 秒內，一天最多9次
+  - BaseSumCounter 間隔 1d，maxRetries 9
+    - NestedCounter 間隔 3min，maxRetries INFINITY
+      - SpanCounter 間隔 span 10s， maxRetries 3
 
 ## Examples:
 ### EmailCounter
@@ -197,7 +196,7 @@ export class VerifyOTPPeriodCounter extends BaseNestedCounter{
   protected afterSet(lbound: number): void {}
 }
 
-/** Sum counter 計數底層  */
+/** BaseSumCounter 計數底層次數, 行為模式不太一樣  */
 export class VerifyOTPCounter extends BaseSumCounter{
   constructor(key: string = 'VerifyOTPCounter') {
     super({
