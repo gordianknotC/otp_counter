@@ -1,5 +1,7 @@
 # OTP Counter
 
+![](.README_images/34154168.png)
+
 [demo](https://gordianknotc.github.io/otp_counter/)
 
 由二種 counter 組成，NestedCounter 內可巢狀一個 SpanCounter|NestedCounter, 
