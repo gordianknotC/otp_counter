@@ -2,15 +2,13 @@
 section.p-4
   section.my-2
     h2.font-bold.text-xl.my-2 EmailCounter
-    p.text-sm 於 period ({{emailCounter.state.span}}s) 其間可進行 {{emailCounter.state.maxTimes}} 次倒數
-    p.text-sm 於 span ({{emailCounter.nestedCounter.state.span}}s) 其間可進行 {{emailCounter.nestedCounter.state.maxTimes}} 次倒數, 當 period 再次計數後 span 重設
-  h2.font-bold.text-xl.my-2 period counter
+  h2.font-bold.text-lg.my-2 NestedCounter
   pre counter        : {{emailCounterText}}
   pre retires        : {{emailCounter.state.retries}}
   pre max retries    : {{emailCounter.state.maxTimes}}
   pre exceed retries : {{emailCounter.hasExceedMaxRetries.value}}
   pre enabled        : {{emailCounter.counterEnabled}}
-  h2.font-bold.text-xl.my-2 span counter
+  h2.font-bold.text-lg.my-2 SpanCounter
   pre counter     : {{emailSubCounterText}}
   pre retires     : {{emailCounter.nestedCounter.state.retries}}
   pre max retries : {{emailCounter.nestedCounter.state.maxTimes}}
@@ -29,21 +27,19 @@ section.p-4
 
   section.my-2
     h2.font-bold.text-xl.my-2 OTPCounter
-    p.text-sm 於 period ({{otpCounter.state.span}}s) 其間可進行 {{otpCounter.state.maxTimes}} 次倒數
-    p.text-sm 於 span ({{otpCounter.nestedCounter.state.span}}s) 其間可進行 {{otpCounter.nestedCounter.state.maxTimes}} 次倒數, 當 period 再次計數後 span 重設
-  h2.font-bold.text-lg.my-2 OTPCounter
+  h2.font-bold.text-lg.my-2 BaseSumCounter
   pre counter        : {{otpCounterText}}
   pre retires        : {{otpCounter.state.retries}}
   pre max retries    : {{otpCounter.state.maxTimes}}
   pre exceed retries : {{otpCounter.hasExceedMaxRetries.value}}
   pre enabled        : {{otpCounter.counterEnabled}}
-  h2.font-bold.text-lg.my-2 OTPSubCounter
+  h2.font-bold.text-lg.my-2 NestedCounter
   pre counter     : {{otpSubCounterText}}
   pre retires     : {{otpCounter.nestedCounter.state.retries}}
   pre max retries : {{otpCounter.nestedCounter.state.maxTimes}}
   pre exceed retries : {{otpCounter.nestedCounter.hasExceedMaxRetries.value}}
   pre enabled        : {{otpCounter.nestedCounter.counterEnabled}}
-  h2.font-bold.text-lg.my-2 OTPSubSubCounter
+  h2.font-bold.text-lg.my-2 SpanCounter
   pre counter     : {{otpSubSubCounterText}}
   pre retires     : {{otpCounter.nestedCounter.nestedCounter.state.retries}}
   pre max retries : {{otpCounter.nestedCounter.nestedCounter.state.maxTimes}}
@@ -58,11 +54,9 @@ section.p-4
       span.text start
     van-button(@click="otp_continuum")
       span.text continuum
-
   br
   br
   br
-
 </template>
 
 <script lang="ts">
@@ -70,7 +64,7 @@ import { ComputedRef, defineComponent, ref, watch } from "vue";
 import {VerifEmailSpanCounter, VerifyEmailCounter, VerifyOTPCounter, VerifyOTPPeriodCounter} from "~/store/counter/counter";
 import {computed, onMounted} from "~/appCommon/base/vueTypes";
 import {APP_CONFIGS} from "~/config";
-import {BaseNestedCounter} from "~/appCommon/counter/counters_period";
+import {BaseNestedCounter} from "~/appCommon/counter/counter_nested";
 
 
 export default defineComponent({

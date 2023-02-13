@@ -1,9 +1,15 @@
 import {BaseSpanCounter, CounterStage} from "~/appCommon/counter/counters_span";
-import {BaseNestedCounter} from "~/appCommon/counter/counters_period";
+import {BaseNestedCounter} from "~/appCommon/counter/counter_nested";
+import {BaseSumCounter} from "~/appCommon/counter/counter_sum";
+
+
+
+
+
+
 
 
 /** example email counter */
-
 export class VerifEmailSpanCounter extends  BaseSpanCounter{
   constructor(key: string = 'EmailSpanCounter') {
     super({
@@ -38,12 +44,12 @@ export class VerifyEmailCounter extends BaseNestedCounter{
 
 
 /** example otp counter */
-
 export class VerifOTPSpanCounter extends  BaseSpanCounter{
   constructor(key: string = 'VerifOTPSpanCounter') {
     super({
-      maxTimes: 0,
-      span:     1,
+      /** 0 代表無限大 */
+      maxTimes: 3,
+      span:     10,
       storeKey: key
     });
   }
@@ -54,8 +60,9 @@ export class VerifOTPSpanCounter extends  BaseSpanCounter{
 export class VerifyOTPPeriodCounter extends BaseNestedCounter{
   constructor(key: string = 'VerifyOTPPeriodCounter') {
     super({
+      /** 0 代表無限大 */
       maxTimes:  0,
-      period: 12,
+      period: 60 * 3,
       nestedCounter: new VerifOTPSpanCounter(),
       storeKey: key,
     });
@@ -65,14 +72,14 @@ export class VerifyOTPPeriodCounter extends BaseNestedCounter{
   protected afterSet(lbound: number): void {}
 }
 
-export class VerifyOTPCounter extends BaseNestedCounter{
+/** Sum counter 計數底層  */
+export class VerifyOTPCounter extends BaseSumCounter{
   constructor(key: string = 'VerifyOTPCounter') {
     super({
       maxTimes:  9,
       period: 60 * 60,
       nestedCounter: new VerifyOTPPeriodCounter(),
       storeKey: key,
-      countNested: true,
     });
   }
   protected afterCancel(): void {}

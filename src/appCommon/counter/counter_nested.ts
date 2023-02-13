@@ -1,5 +1,5 @@
 import {BaseSpanCounter, CounterStage,} from "~/appCommon/counter/counters_span";
-import {IBaseNestedCounter} from "~/appCommon/counter/counters_period_typedef";
+import {IBaseNestedCounter} from "~/appCommon/counter/counters_nested_typedef";
 
 
 type TPeriodCounterOption = {
@@ -14,6 +14,7 @@ type TPeriodCounterOption = {
 export
 abstract class BaseNestedCounter extends BaseSpanCounter implements IBaseNestedCounter{
   nestedCounter: BaseNestedCounter|BaseSpanCounter;
+  /** true 時計數底層的 counter 次數 */
   countNested: boolean = false;
   protected constructor(option: {
     maxTimes: number,
@@ -57,18 +58,26 @@ abstract class BaseNestedCounter extends BaseSpanCounter implements IBaseNestedC
     }
 
     const ret = [...periodStage, ...spanStage];
-    const innerMostStage = spanStage[spanStage.length -1];
 
     if (this.countNested){
-      if (innerMostStage == CounterStage.startNewCount){
-        if (!this.hasExceedMaxRetries.value){
-          this.retry();
-        }else{
-          this.didExceedMaxRetries();
-        }
+      if (ret.slice(1).indexOf(CounterStage.startNewCount) != -1){
+        this.onCountNestedCounter(ret);
       }
     }
     return ret;
+  }
+
+  /** 當 {@link countNested} 為 true 且所有巢狀 counter 中有其中之一 start new counter
+   * 會呼叫 {@link onCountNestedCounter}，這裡預設為計數最低層的 counter */
+  protected onCountNestedCounter(stages: CounterStage[]){
+    const innerMostStage = stages[stages.length -1];
+    if (innerMostStage == CounterStage.startNewCount){
+      if (!this.hasExceedMaxRetries.value){
+        this.retry();
+      }else{
+        this.didExceedMaxRetries();
+      }
+    }
   }
 
   protected didExceedMaxRetries() {
