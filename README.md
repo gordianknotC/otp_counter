@@ -4,11 +4,40 @@
 
 [demo](https://gordianknotc.github.io/otp_counter/)
 
-由二種 counter 組成
+前端常用 otp counter / email counter
+
+## Feature
+- counter 當前狀態會即時寫入 browser local storage, 重刷不影嚮 counter 狀態，除非清除 local storage
+- 可多重 counter 巢狀在一起，組作複合條件 counter
+  - BaseSpanCounter | [source][span]
+
+    可設定 counter 於 span 秒內重試 St 次
+  - BaseNestedCounter | [source][nested]
+
+    可設定 counter 於 period 秒內重試 St 次, 並可巢狀一個 BaseSpanCounter|BaseNestedCounter, 當母層計數完後，子層計數重設
+
+  - BaseSumCounter | [source][sum]
+
+    繼承 BaseNestedCounter, 覆寫 countNested 為 true，用來計數巢狀 counter
+
+
+## Todo
+- [V] demo
+- [ ] 轉為 ts package
+- [ ] 單元測試
+
+
+
+## 說明
+主要由二種 counter 組成
 - BaseNestedCounter 
 - BaseSpanCounter
 
-BaseNestedCounter 繼承 BaseNestedCounter，內可巢狀一個 BaseSpanCounter | BaseNestedCounter, 當 BaseSpanCounter 巢狀於 BaseNestedCounter 下時，BaseSpanCounter 得以被 BaseNestedCounter 重設，BaseNestedCounter 繼承了 BaseSpanCounter 的基本邏輯， 雙重 counter 設計用於多重 counter 條件，基本定義如下：
+BaseNestedCounter 繼承 BaseNestedCounter，內可巢狀一個 BaseSpanCounter | BaseNestedCounter, 
+當 BaseSpanCounter 巢狀於 BaseNestedCounter 下時，BaseSpanCounter 得以被 BaseNestedCounter 重設，
+BaseNestedCounter 繼承了 BaseSpanCounter 的基本邏輯。
+
+巢重 counter 主要設計應用於多重 counter 條件，基本定義如下：
 
 > __定義:__
 >
@@ -20,30 +49,22 @@ BaseNestedCounter 繼承 BaseNestedCounter，內可巢狀一個 BaseSpanCounter 
 
 
 __實例 email counter:__
-5分鐘可重試5次，每次間隔 10 秒內，若以 BaseNestedCounter/BaseSpanCounter 組合，其設定如下：
-- BaseNestedCounter -  period 5min， maxRetries 1
-  - BaseSpanCounter - span 10s， maxRetries 5
+
+> 某 counter 5分鐘可重試5次，每次間隔 10 秒內，若以 BaseNestedCounter/BaseSpanCounter 組合，其設定如下：
+> - BaseNestedCounter -  period 5min， maxRetries 1
+>   - BaseSpanCounter - span 10s， maxRetries 5
 
 
 __實例 otp counter:__
-於 3分鐘可重試3次，每次間隔 10 秒內，一天最多9次, 若以 BaseNestedCounter/BaseSpanCounter 組合，其設定如下：
-- BaseSumCounter 間隔 1d，maxRetries 9
-  - BaseNestedCounter 間隔 3min，maxRetries INFINITY
-    - BaseSpanCounter 間隔 span 10s， maxRetries 3
 
-
-## Feature
-- counter 當前狀態會即時寫入 browser local storage, 重刷不影嚮 counter 狀態，除非清除 local storage
-- BaseSpanCounter | [source][span]
-  
-  可設定 counter 於 span 秒內重試 St 次
-- BaseNestedCounter | [source][nested]
-  
-  可設定 counter 於 period 秒內重試 St 次, 並可巢狀一個 BaseSpanCounter|BaseNestedCounter, 當母層計數完後，子層計數重設
-
-- BaseSumCounter | [source][sum]
-  
-  繼承 BaseNestedCounter, 覆寫 countNested 為 true，用來計數巢狀 counter 
+> 某 counter 於 3分鐘可重試3次，每次間隔 10 秒內，一天最多9次, 若以 BaseNestedCounter/BaseSpanCounter 組合，其設定如下：
+> - **BaseSumCounter** 間隔 1d，maxRetries 9
+>   - BaseNestedCounter 間隔 3min，maxRetries INFINITY
+>     - BaseSpanCounter 間隔 span 10s， maxRetries 3
+> 
+> > maxRetries 設為 INFINITY 代表無限制, 因限制權主要在母層, 
+> >
+> > 使用 BaseSumCounter 是用來計數最子層的 Counter
 
 
 
@@ -348,11 +369,6 @@ export default defineComponent({
 </script>
 ```
 
-
-## Todo
-- [V] demo
-- [ ] 轉為 ts package
-- [ ] 單元測試  
 
 
 
